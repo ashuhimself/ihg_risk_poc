@@ -1,0 +1,37 @@
+# Pipeline Configuration for IHG Risk POC
+# Update these values according to your GCP project setup
+
+# GCP Project Configuration
+PROJECT_ID: "your-project-id"
+LOCATION: "us-central1"
+BUCKET_NAME: "your-bucket-name"
+
+# BigQuery Configuration
+DATASET_ID: "ihg_risk_dataset"
+SOURCE_TABLE: "risk_data"
+
+# Model Configuration
+MODEL_NAME: "ihg-risk-classifier"
+MODEL_VERSION: "v1.0.0"
+
+# Pipeline Configuration
+PIPELINE_NAME: "ihg-risk-training-pipeline"
+PIPELINE_DESCRIPTION: "ML training pipeline for IHG risk assessment"
+
+# Training Configuration
+TRAIN_IMAGE: "gcr.io/deeplearning-platform-release/sklearn-cpu:latest"
+SERVE_IMAGE: "gcr.io/cloud-aiplatform/prediction/sklearn-cpu.0-24:latest"
+
+# Deployment Configuration
+ENDPOINT_MACHINE_TYPE: "n1-standard-2"
+MIN_REPLICA_COUNT: 1
+MAX_REPLICA_COUNT: 3
+
+# Monitoring Configuration
+MONITORING_ENABLED: true
+ALERT_EMAIL: "admin@example.com"
+
+# Data Configuration
+TRAINING_DATA_LOOKBACK_DAYS: 30
+VALIDATION_SPLIT: 0.2
+TEST_SPLIT: 0.1
