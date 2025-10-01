@@ -1,5 +1,5 @@
-# Use Python 3.9 slim image
-FROM python:3.9-slim
+# Use Python 3.10 slim image
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
@@ -7,27 +7,32 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
+# Copy requirements
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Additional serving dependencies
+RUN pip install --no-cache-dir \
+    flask==2.3.3 \
+    gunicorn==21.2.0
+
+# Copy serving code
+COPY serving/model_server.py .
 
 # Set environment variables
-ENV PYTHONPATH=/app
-ENV GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json
+ENV PORT=8080
+ENV PROJECT_ID=ihg-mlops
+ENV BUCKET_NAME=ihg-mlops
+ENV MODEL_PATH=models/ensemble_model.pkl
+ENV FEATURES_PATH=models/feature_names.pkl
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Run the application
-CMD ["uvicorn", "portal.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run with gunicorn
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 900 model_server:app
