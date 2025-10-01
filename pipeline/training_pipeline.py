@@ -72,15 +72,15 @@ def fraud_detection_pipeline(
         model=train_task.outputs["model"]
     )
     
-    # Set pipeline level configurations
-    preprocess_task.set_cpu_limit('4')
-    preprocess_task.set_memory_limit('16G')
+    # Set pipeline level configurations - REDUCED FOR QUOTA
+    preprocess_task.set_cpu_limit('2')
+    preprocess_task.set_memory_limit('8G')
     
-    train_task.set_cpu_limit('8')
-    train_task.set_memory_limit('32G')
+    train_task.set_cpu_limit('2')
+    train_task.set_memory_limit('8G')
     
-    evaluate_task.set_cpu_limit('4')
-    evaluate_task.set_memory_limit('16G')
+    evaluate_task.set_cpu_limit('2')
+    evaluate_task.set_memory_limit('8G')
 
 
 def compile_pipeline():
