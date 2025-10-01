@@ -1,280 +1,328 @@
-# IHG Risk Assessment MLOps Platform
+# Fraud Detection MLOps Pipeline on GCP
 
-A full-featured MLOps framework built on Google Cloud Platform for risk assessment modeling. This repository implements an end-to-end machine learning lifecycle with automated training, deployment, monitoring, and human-in-the-loop feedback capabilities.
+A production-ready MLOps pipeline for fraud detection using Vertex AI, BigQuery, and GCS.
 
-## 🏗️ Architecture Overview
+## 🎯 Overview
 
-The platform is designed with a modular architecture supporting continuous ML workflows:
+This pipeline transforms your existing fraud detection notebook into a scalable, production-ready MLOps solution on Google Cloud Platform. It includes:
 
-```
-📁 ihg_risk_poc/
-├── 🔄 pipelines/          # Vertex AI ML pipelines
-│   ├── vertex_ai/         # Training & deployment pipelines
-│   ├── components/        # Reusable pipeline components
-│   └── configs/           # Pipeline configurations
-├── 🎯 training/           # Model training modules
-│   ├── models/            # Model training scripts
-│   ├── data_processing/   # Data preprocessing utilities
-│   └── evaluation/        # Model evaluation tools
-├── 🚀 deployment/         # Model deployment
-│   ├── endpoints/         # Vertex AI endpoint management
-│   ├── monitoring/        # Model monitoring setup
-│   └── scripts/           # Deployment automation
-├── 🌐 portal/             # Web application
-│   ├── backend/           # FastAPI REST API
-│   └── frontend/          # React web interface
-├── 🔧 utils/              # Utility modules
-│   ├── bigquery/          # BigQuery data operations
-│   └── pipeline_triggers/ # Pipeline orchestration
-└── 📚 docs/               # Documentation
-    ├── architecture/      # System architecture docs
-    └── api/               # API documentation
-```
+- **Data ingestion** from BigQuery
+- **Automated model training** with XGBoost, LightGBM, and Logistic Regression ensemble
+- **Feature selection** based on importance scores
+- **Model evaluation** with business metrics
+- **Model deployment** to Vertex AI endpoints
+- **Batch prediction** capabilities
+- **Real-time serving** with REST API
 
-## ✨ Key Features
+## 📋 Prerequisites
 
-### 🤖 Automated ML Pipeline
-- **Data Extraction**: Automated BigQuery data fetching with quality validation
-- **Feature Engineering**: Scalable data preprocessing and feature creation
-- **Model Training**: Support for multiple ML frameworks (scikit-learn, TensorFlow, PyTorch)
-- **AutoML Integration**: Vertex AI AutoML for rapid model development
-- **Hyperparameter Tuning**: Automated optimization with Vertex AI
-
-### 🎯 Model Management
-- **Version Control**: Complete model lifecycle management
-- **A/B Testing**: Canary deployments with traffic splitting
-- **Performance Monitoring**: Real-time model performance tracking
-- **Rollback Capabilities**: Safe deployment with instant rollback options
-
-### 📊 Data Quality & Monitoring
-- **Data Validation**: Automated schema and quality checks
-- **Drift Detection**: Statistical drift monitoring for features and predictions
-- **Outlier Detection**: Anomaly detection in incoming data
-- **Data Lineage**: Complete traceability from source to predictions
-
-### 🌐 User Interface
-- **Web Portal**: React-based interface for data scientists and business users
-- **Real-time Dashboards**: Performance metrics and system health monitoring
-- **Prediction Interface**: Interactive prediction testing and batch processing
-- **Model Management**: GUI for model deployment and lifecycle management
+1. **GCP Project**: `ihg-mlops`
+2. **BigQuery Table**: `ihg-mlops.ihg_training_data.booking`
+3. **GCS Bucket**: `ihg-mlops`
+4. **Required APIs**:
+   - Vertex AI API
+   - BigQuery API
+   - Cloud Storage API
+   - Container Registry API
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Python 3.9+
-- Node.js 16+ (for frontend)
-- Google Cloud SDK
-- Docker (optional)
-
 ### 1. Clone and Setup
+
 ```bash
-git clone https://github.com/ashuhimself/ihg_risk_poc.git
-cd ihg_risk_poc
-chmod +x setup.sh
-./setup.sh
+# Clone the repository
+git clone <your-repo>
+cd fraud-detection-mlops
+
+# Make setup script executable
+chmod +x setup_and_run.sh
+
+# Run setup
+./setup_and_run.sh
 ```
 
-### 2. Configure GCP
-```bash
-# Set up your GCP service account key
-cp service-account-key.json.template service-account-key.json
-# Update with your actual service account credentials
+### 2. Configure Service Account (if needed)
 
-# Configure environment
-cp .env.template .env
-# Update .env with your project details
+```bash
+# Create service account
+gcloud iam service-accounts create fraud-detection-sa \
+    --display-name="Fraud Detection Service Account"
+
+# Grant necessary permissions
+gcloud projects add-iam-policy-binding ihg-mlops \
+    --member="serviceAccount:fraud-detection-sa@ihg-mlops.iam.gserviceaccount.com" \
+    --role="roles/aiplatform.user"
+
+gcloud projects add-iam-policy-binding ihg-mlops \
+    --member="serviceAccount:fraud-detection-sa@ihg-mlops.iam.gserviceaccount.com" \
+    --role="roles/bigquery.dataViewer"
+
+gcloud projects add-iam-policy-binding ihg-mlops \
+    --member="serviceAccount:fraud-detection-sa@ihg-mlops.iam.gserviceaccount.com" \
+    --role="roles/storage.objectAdmin"
 ```
 
-### 3. Start the Services
-```bash
-# Backend API
-source venv/bin/activate
-uvicorn portal.backend.main:app --reload
+## 📁 Project Structure
 
-# Frontend (in a new terminal)
-cd portal/frontend
-npm start
-
-# Or use Docker Compose
-docker-compose up -d
+```
+fraud-detection-mlops/
+├── components/               # Pipeline components
+│   ├── data_preprocessing.py    # Data loading and splitting
+│   ├── model_training.py        # Model training logic
+│   ├── model_evaluation.py      # Evaluation metrics
+│   └── batch_prediction.py      # Batch inference
+├── pipeline/                 # Pipeline orchestration
+│   └── training_pipeline.py     # Main pipeline definition
+├── serving/                  # Model serving
+│   └── model_server.py          # Flask API server
+├── requirements.txt          # Python dependencies
+├── Dockerfile               # Container for serving
+├── deploy_model.py          # Deployment script
+├── setup_and_run.sh         # Setup automation
+└── README.md               # Documentation
 ```
 
-### 4. Access the Platform
-- **Web Interface**: http://localhost:3000
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
+## 🔄 Pipeline Workflow
 
-## 📋 Usage Examples
+### Training Pipeline
 
-### Training a New Model
+1. **Data Preprocessing**
+   - Reads data from BigQuery table
+   - Handles missing values
+   - Splits into train/test sets
+   - Logs data statistics
+
+2. **Model Training**
+   - Trains XGBoost, LightGBM, and Logistic Regression
+   - Calculates feature importance
+   - Selects top features based on threshold
+   - Creates voting ensemble
+   - Saves model to GCS
+
+3. **Model Evaluation**
+   - Calculates performance metrics (ROC-AUC, PR-AUC)
+   - Generates confusion matrix
+   - Computes business impact metrics
+   - Saves evaluation report
+
+### Deployment Pipeline
+
+1. **Model Registry**
+   - Uploads model to Vertex AI Model Registry
+   - Versions models automatically
+
+2. **Endpoint Creation**
+   - Creates scalable serving endpoint
+   - Auto-scaling based on traffic
+
+3. **Model Deployment**
+   - Deploys model with specified resources
+   - Configures traffic splitting
+
+## 💻 Running the Pipeline
+
+### Training Pipeline
+
 ```bash
-# Using the CLI
-python training/models/risk_model.py \
-  --data_path gs://your-bucket/data.csv \
-  --output_path ./models/risk_model_v1
+# Run training pipeline
+python pipeline/training_pipeline.py \
+    --project-id ihg-mlops \
+    --location us-central1 \
+    --pipeline-root gs://ihg-mlops/pipeline-root
+```
 
-# Using the API
-curl -X POST "http://localhost:8000/train" \
+### Batch Prediction
+
+```python
+from components.batch_prediction import batch_predict
+
+# Run batch predictions
+batch_predict(
+    project_id="ihg-mlops",
+    bucket_name="ihg-mlops",
+    input_table="ihg_training_data.booking_new",
+    output_table="ihg_training_data.predictions",
+    model_path="models/ensemble_model.pkl",
+    features_path="models/feature_names.pkl"
+)
+```
+
+### Model Deployment
+
+```bash
+# Build Docker image
+docker build -t gcr.io/ihg-mlops/fraud-detection-model:latest .
+docker push gcr.io/ihg-mlops/fraud-detection-model:latest
+
+# Deploy model
+python deploy_model.py \
+    --project-id ihg-mlops \
+    --location us-central1 \
+    --model-uri gs://ihg-mlops/models \
+    --test
+```
+
+## 🔍 Testing the Endpoint
+
+### REST API Call
+
+```bash
+# Get endpoint URL
+ENDPOINT_URL="https://us-central1-aiplatform.googleapis.com/v1/projects/ihg-mlops/locations/us-central1/endpoints/YOUR_ENDPOINT_ID:predict"
+
+# Test prediction
+curl -X POST $ENDPOINT_URL \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
   -H "Content-Type: application/json" \
   -d '{
-    "dataset_id": "risk_dataset",
-    "table_id": "training_data",
-    "model_name": "risk_classifier_v1"
+    "instances": [
+      {
+        "feature_1": 0.5,
+        "feature_2": 1.0,
+        ...
+      }
+    ]
   }'
 ```
 
-### Making Predictions
-```bash
-# Single prediction via API
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "features": {
-      "feature1": 0.5,
-      "feature2": 100,
-      "category": "high_risk"
-    }
-  }'
+### Python Client
 
-# Batch prediction
-curl -X POST "http://localhost:8000/batch-predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input_uri": "gs://your-bucket/batch_input.jsonl",
-    "output_uri": "gs://your-bucket/predictions/"
-  }'
+```python
+from google.cloud import aiplatform
+
+# Initialize
+aiplatform.init(project="ihg-mlops", location="us-central1")
+
+# Get endpoint
+endpoint = aiplatform.Endpoint("YOUR_ENDPOINT_ID")
+
+# Make prediction
+test_instance = {
+    "feature_1": 0.5,
+    "feature_2": 1.0,
+    # ... add all required features
+}
+
+prediction = endpoint.predict(instances=[test_instance])
+print(prediction.predictions)
 ```
 
-### Pipeline Management
-```bash
-# Trigger training pipeline
-python utils/pipeline_triggers/pipeline_manager.py \
-  --project_id your-project \
-  --operation trigger \
-  --config_path pipeline_config.json
+## 📊 Monitoring
 
-# Check pipeline status
-python utils/pipeline_triggers/pipeline_manager.py \
-  --project_id your-project \
-  --operation status \
-  --job_id pipeline-job-id
-```
+### Pipeline Monitoring
+- View pipelines: https://console.cloud.google.com/vertex-ai/pipelines
+- Check logs: `gcloud logging read 'resource.type=ml_job'`
 
-## 🛠️ Development
+### Model Monitoring
+- Model metrics: https://console.cloud.google.com/vertex-ai/models
+- Endpoint health: https://console.cloud.google.com/vertex-ai/endpoints
+- Prediction logs: Cloud Logging
 
-### Code Structure
-- **Modular Design**: Each component is self-contained with clear interfaces
-- **Type Hints**: Comprehensive type annotations for better code quality
-- **Documentation**: Inline documentation and comprehensive API docs
-- **Testing**: Unit tests for critical components
-- **Logging**: Structured logging throughout the application
-
-### Adding New Models
-1. Create model class in `training/models/`
-2. Add preprocessing logic in `training/data_processing/`
-3. Update pipeline configuration in `pipelines/configs/`
-4. Test locally before deployment
-
-### Extending the API
-1. Add new endpoints in `portal/backend/main.py`
-2. Update API documentation
-3. Add corresponding frontend components if needed
-4. Update tests and validation
+### Cost Monitoring
+- Billing dashboard: https://console.cloud.google.com/billing
+- Set up budget alerts for cost control
 
 ## 🔧 Configuration
 
-### Pipeline Configuration
-Update `pipelines/configs/pipeline_config.yaml`:
-```yaml
-PROJECT_ID: "your-gcp-project"
-LOCATION: "us-central1"
-BUCKET_NAME: "your-ml-bucket"
-DATASET_ID: "your_dataset"
-MODEL_NAME: "your-model-name"
+### Pipeline Parameters
+
+Edit `pipeline/training_pipeline.py` to modify:
+
+```python
+parameter_values={
+    "project_id": "ihg-mlops",
+    "dataset_id": "ihg_training_data",
+    "table_id": "booking",
+    "bucket_name": "ihg-mlops",
+    "test_size": 0.3,              # Test split ratio
+    "random_state": 42,             # Random seed
+    "importance_threshold": 0.05,   # Feature selection threshold
+    "model_name": "fraud_detection_ensemble"
+}
 ```
 
-### Environment Variables
-Key environment variables in `.env`:
-- `GCP_PROJECT_ID`: Your GCP project ID
-- `GCP_LOCATION`: GCP region (default: us-central1)
-- `GOOGLE_APPLICATION_CREDENTIALS`: Path to service account key
-- `BQ_DATASET_ID`: BigQuery dataset for training data
-- `API_KEY`: API authentication key
+### Serving Configuration
 
-## 📊 Monitoring & Observability
+Edit `deploy_model.py` to modify:
 
-### Model Performance
-- **Accuracy Tracking**: Real-time accuracy monitoring
-- **Latency Metrics**: Response time percentiles
-- **Error Rates**: Request failure monitoring
-- **Resource Usage**: CPU/memory utilization
+```python
+# Machine type
+machine_type="n1-standard-4"
 
-### Data Quality
-- **Schema Validation**: Automatic schema drift detection
-- **Data Freshness**: Monitoring data update frequency
-- **Quality Scores**: Automated data quality assessment
-- **Anomaly Detection**: Statistical outlier identification
+# Scaling
+min_replica_count=1
+max_replica_count=3
 
-### System Health
-- **Service Status**: Component health monitoring
-- **Infrastructure**: GCP resource monitoring
-- **Alerts**: Automated alert configuration
-- **Dashboards**: Real-time system dashboards
+# Add GPU if needed
+accelerator_type="NVIDIA_TESLA_T4"
+accelerator_count=1
+```
 
-## 🔒 Security & Compliance
+## 🐛 Troubleshooting
 
-- **IAM Integration**: GCP Identity and Access Management
-- **Data Encryption**: At-rest and in-transit encryption
-- **Audit Logging**: Comprehensive activity logging
-- **VPC Security**: Network-level security controls
-- **Secrets Management**: Secure credential handling
+### Common Issues
 
-## 📚 Documentation
+1. **BigQuery Permission Error**
+   ```bash
+   # Grant BigQuery access
+   gcloud projects add-iam-policy-binding ihg-mlops \
+       --member="user:YOUR_EMAIL" \
+       --role="roles/bigquery.dataViewer"
+   ```
 
-- [**System Architecture**](docs/architecture/system_architecture.md): Detailed architecture overview
-- [**API Reference**](docs/api/api_reference.md): Complete API documentation
-- [**Deployment Guide**](docs/deployment/README.md): Production deployment instructions
-- [**Troubleshooting**](docs/troubleshooting/README.md): Common issues and solutions
+2. **Pipeline Fails to Start**
+   ```bash
+   # Check if APIs are enabled
+   gcloud services list --enabled
+   
+   # Enable missing APIs
+   gcloud services enable aiplatform.googleapis.com
+   ```
 
-## 🤝 Contributing
+3. **Docker Build Fails**
+   ```bash
+   # Authenticate Docker
+   gcloud auth configure-docker
+   ```
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Make changes and add tests
-4. Run tests: `pytest`
-5. Commit changes: `git commit -am 'Add new feature'`
-6. Push to branch: `git push origin feature/new-feature`
-7. Submit a Pull Request
+4. **Endpoint Returns 500 Error**
+   ```bash
+   # Check logs
+   gcloud logging read "resource.labels.endpoint_id=YOUR_ENDPOINT_ID" \
+       --limit 50 --format json
+   ```
 
-## 📄 License
+## 📈 Performance Optimization
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Training Optimization
+- Use larger machine types for faster training
+- Enable GPU for deep learning models
+- Adjust batch_size for memory efficiency
 
-## 🆘 Support
+### Serving Optimization
+- Enable autoscaling for variable traffic
+- Use GPU endpoints for complex models
+- Implement caching for frequent predictions
 
-For support and questions:
-- Create an issue in this repository
-- Check the [troubleshooting guide](docs/troubleshooting/README.md)
-- Review the [API documentation](docs/api/api_reference.md)
+### Cost Optimization
+- Use preemptible VMs for training
+- Schedule batch predictions during off-peak
+- Monitor and optimize resource usage
 
-## 🗺️ Roadmap
+## 🔒 Security Best Practices
 
-### Current Version (v1.0.0)
-- ✅ Core MLOps pipeline framework
-- ✅ Vertex AI integration
-- ✅ FastAPI backend with React frontend
-- ✅ BigQuery data integration
-- ✅ Basic monitoring and logging
+1. **Service Account Permissions**
+   - Use least privilege principle
+   - Create dedicated service accounts
+   - Rotate keys regularly
 
-### Upcoming Features
-- 🔄 Advanced AutoML integration
-- 🔄 Edge deployment support
-- 🔄 Advanced monitoring dashboards
-- 🔄 MLflow experiment tracking
-- 🔄 Kubernetes deployment options
-- 🔄 Multi-region deployment
-- 🔄 Advanced security features
+2. **Data Security**
+   - Encrypt data at rest and in transit
+   - Use VPC Service Controls
+   - Implement data retention policies
 
----
+3. **Model Security**
+   - Version control models
+   - Implement model validation
+   - Monitor for adversarial inputs
 
-Built with ❤️ for scalable MLOps on Google Cloud Platform
