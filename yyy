@@ -3,3 +3,5 @@ git checkout HEAD -- .
 
 # 2. Get the 35 changed files and apply only those
 git diff --name-only 14182c8e00d~1 14182c8e00d | xargs git checkout 14182c8e00d --
+
+git checkout --ours -- dags/publish/blade/scripts/load_operator.py dags/publish/blade/scripts/load_operator_bcd.py dags/publish/csp/scripts/load_operator.py dags/publish/esg/scripts/load_operator.py dags/publish/gt/scripts/load_operator.py dags/publish/loaniq/scripts/load_operator.py dags/publish/mbp_ras_bor/scripts/load_operator.py dags/DOSLibrary/common/operators/td/load_operator.py
