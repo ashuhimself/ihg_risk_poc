@@ -1,0 +1,5 @@
+# 1. Undo the mess
+git checkout HEAD -- .
+
+# 2. Get the 35 changed files and apply only those
+git diff --name-only 14182c8e00d~1 14182c8e00d | xargs git checkout 14182c8e00d --
