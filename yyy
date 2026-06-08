@@ -10,3 +10,5 @@ git checkout --ours -- dags/publish/blade/scripts/load_operator.py dags/publish/
 git checkout --ours -- tests/test_dag_integrity.py
 git add .
 git rebase --continue -m "fix: move airflow home setup into conftest with session scope"
+
+GIT_EDITOR=true git rebase --continue
